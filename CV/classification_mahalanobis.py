@@ -3,13 +3,17 @@
 from PIL import Image
 from numpy import array, sqrt, int32
 from pylab import linalg, figure, imshow, show, ginput
+from math import sqrt as squareRoot
 #-----------------------
 import numpy as np
 import matplotlib.pyplot as plt
 #-----------------------
 
-import cv2
 import sys
+
+
+def euclideanDistance(p1, p2):
+    return squareRoot(abs((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2))
 
 
 def mahalanobisDistance(color, avarage, covariance):
@@ -57,7 +61,7 @@ def getSamples(image):
 
     return pos
 
-def segmentate(image, sample_points):
+def segmentate(image, sample_points, center, radius):
                 # y primero porque el array contiene las filas primero, dentro de estas estan las columnas
     values = image[sample_points[:, 1], sample_points[:, 0]]
 
@@ -68,33 +72,40 @@ def segmentate(image, sample_points):
     # mean: media ~ promedio
     mean = np.mean(values, axis=0)
 
-    boundaries = {'x1': 1000000000, 'y1': 10000000000, 'x2': 0, 'y2': 0}
+    boundaries = {'x1': 10000000000, 'y1': 10000000000, 'x2': 0, 'y2': 0}
 
-    for i in range(rows):
-        for j in range(cols):
+    start_row = int(round(center[1] - radius if center[1] - radius > 0 else 0))
+    start_col = int(round(center[0] - radius if center[0] - radius > 0 else 0))
+    end_row = int(round(center[1] + radius if center[1] + radius < rows else rows - 1))
+    end_col = int(round(center[0] + radius if center[0] + radius < cols else cols - 1))
 
-            # from the i row, take the j col, and then take all the rgb values
-            pixel = image[i, j, :]
+    for i in range(start_row, end_row + 1):
+        for j in range(start_col, end_col + 1):
 
-            distance = mahalanobisDistance(pixel, mean, covariance)
+            if euclideanDistance((j, i), center) <= radius: # if pixel is in the circle
 
-            # output_image[i, j, :] = 255 if distance > 15 else 0
+                # from the i row, take the j col, and then take all the rgb values
+                pixel = image[i, j, :]
 
-            if distance <= 15:  # if pixel is from the object
-                if j < boundaries['x1']:
-                    boundaries['x1'] = j
-                elif i < boundaries['y1']:
-                    boundaries['y1'] = i
-                elif j > boundaries['x2']:
-                    boundaries['x2'] = j
-                elif i > boundaries['y2']:
-                    boundaries['y2'] = i
+                distance = mahalanobisDistance(pixel, mean, covariance)
 
-                image[i, j, :] = 255
-            else:
-                image[i, j, :] = 0
+                # output_image[i, j, :] = 255 if distance > 15 else 0
 
-        print(str(i / rows * 100) + '%')
+                if distance <= 60:  # if pixel is from the object
+                    if j < boundaries['x1']:
+                        boundaries['x1'] = j
+                    elif i < boundaries['y1']:
+                        boundaries['y1'] = i
+                    elif j > boundaries['x2']:
+                        boundaries['x2'] = j
+                    elif i > boundaries['y2']:
+                        boundaries['y2'] = i
+
+                    image[i, j, :] = 255
+                else:
+                    image[i, j, :] = 0
+
+        print(str(i / end_row * 100) + '%')
     return image, boundaries
 
 

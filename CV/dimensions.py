@@ -2,12 +2,34 @@ from sys import argv as args, stderr
 from PIL import Image, ImageFilter
 from pylab import imshow, figure, show
 from numpy import array
+from math import sqrt
 import classification_mahalanobis as segmentation
 
 
 def convertPx2Cm(distance, pixels):
     # 744.079888132296 cuando la  imagen es de 540 * 960
     return distance * pixels / 744.079888132296
+
+
+def getCenterAndRadius(points):
+    min_x, min_y, max_x, max_y = 100000000, 100000000, 0, 0
+    for i in range(len(points)):
+        point = points[i]
+        x, y = point[0], point[1]
+
+        if x < min_x:
+            min_x = x
+        if y < min_y:
+            min_y = y
+        if x > max_x:
+            max_x = x
+        if y > max_y:
+            max_y = y
+
+    center = [(max_x + min_x) / 2, (max_y + min_y) / 2]
+    radius = sqrt(abs((center[0] - max_x) ** 2 + (center[1] - max_y) ** 2))
+
+    return center, radius
 
 
 def main(image_path='./pic.jpg'):
@@ -36,10 +58,14 @@ def main(image_path='./pic.jpg'):
 
     sample_points = segmentation.getSamples(image)
 
+    center, radius = getCenterAndRadius(sample_points)
+
+    radius = radius + 15
+
     print("----------------")
     print("  SEGMENTATION  ")
     print("----------------")
-    image_segmented, boundaries = segmentation.segmentate(image, sample_points)
+    image_segmented, boundaries = segmentation.segmentate(image, sample_points, center, radius)
 
     w, h = boundaries['x2'] - boundaries['x1'], boundaries['y2'] - boundaries['y1']
 
