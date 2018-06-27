@@ -36,7 +36,7 @@ def main(image_path='./pic.jpg'):
     distance = True
     while distance is True:
         try:
-            distance = float(input("Distance to object: "))
+            distance = float(input("Distance to object (cm): "))
             if distance < 0:
                 print("NON POSITIVE DISTANCE", file=stderr)
                 distance = True
