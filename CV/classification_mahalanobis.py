@@ -125,8 +125,6 @@ def main(image_path='./pic.jpg'):
         print(err.strerror + ": " + err.filename)
         exit(1)
 
-    image = cv2.resize(image, (0,0), None, fx=0.5, fy=0.5)
-
     # channels: 3 if it's rgb
     rows, cols, channels = image.shape
 
